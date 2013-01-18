@@ -161,8 +161,8 @@ static NSMutableDictionary * gHistory;
     playPath = path;
     self = [super initWithNibName:nil bundle:nil];
     if (self) {
-        isLive = NO;
-        isFullscreen = YES;
+        self.isLive = NO;
+        self.isFullscreen = YES;
         self.isAlive = YES;
         _moviePosition = 0;
         _startTime = -1;
@@ -247,16 +247,12 @@ static NSMutableDictionary * gHistory;
     
     _topHUD.frame = CGRectMake(0, 0, width, 40);
     
-    _bottomHUD.frame = CGRectMake(30,height-70,width-(30*2),55);
+    _bottomHUD.frame = CGRectMake(30,height-70,width-(30*2), 65);
     
     _topHUD.autoresizingMask = UIViewAutoresizingFlexibleWidth;
     
     _bottomHUD.autoresizingMask = UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleLeftMargin;
     //[self.view addSubview:_topHUD];
-    if(!isLive)
-    {
-        [self.view addSubview:_bottomHUD];
-    }
     
     _topHUD.backgroundColor = [UIColor darkGrayColor];
     // top hud
@@ -294,7 +290,7 @@ static NSMutableDictionary * gHistory;
     _progressLabel.text = @"00:00:00";
     _progressLabel.font = [UIFont systemFontOfSize:12];
     
-    _progressSlider = [[UISlider alloc] initWithFrame:CGRectMake(100,4,width-182,20)];
+    _progressSlider = [[UISlider alloc] initWithFrame:CGRectMake(100, 5, width-182, 20)];
     _progressSlider.autoresizingMask = UIViewAutoresizingFlexibleWidth;
     _progressSlider.continuous = NO;
     _progressSlider.value = 0;
@@ -351,21 +347,21 @@ static NSMutableDictionary * gHistory;
     width = _bottomHUD.bounds.size.width;
     
     _rewindButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    _rewindButton.frame = CGRectMake(width * 0.5 - 65, 5, 40, 40);
+    _rewindButton.frame = CGRectMake(width * 0.5 - 65, 22, 40, 40);
     _rewindButton.backgroundColor = [UIColor clearColor];
     _rewindButton.showsTouchWhenHighlighted = YES;
     [_rewindButton setImage:[UIImage imageNamed:@"kxmovie.bundle/playback_rew"] forState:UIControlStateNormal];
     [_rewindButton addTarget:self action:@selector(rewindDidTouch:) forControlEvents:UIControlEventTouchUpInside];
     
     _playButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    _playButton.frame = CGRectMake(width * 0.5 - 20, 5, 40, 40);
+    _playButton.frame = CGRectMake(width * 0.5 - 20, 22, 40, 40);
     _playButton.backgroundColor = [UIColor clearColor];
     _playButton.showsTouchWhenHighlighted = YES;
     [_playButton setImage:[UIImage imageNamed:@"kxmovie.bundle/playback_play"] forState:UIControlStateNormal];
     [_playButton addTarget:self action:@selector(playDidTouch:) forControlEvents:UIControlEventTouchUpInside];
     
     _forwardButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    _forwardButton.frame = CGRectMake(width * 0.5 + 25, 5, 40, 40);
+    _forwardButton.frame = CGRectMake(width * 0.5 + 25, 22, 40, 40);
     _forwardButton.backgroundColor = [UIColor clearColor];
     _forwardButton.showsTouchWhenHighlighted = YES;
     [_forwardButton setImage:[UIImage imageNamed:@"kxmovie.bundle/playback_ff"] forState:UIControlStateNormal];
@@ -416,8 +412,11 @@ static NSMutableDictionary * gHistory;
                           [NSNumber numberWithFloat:0.0f],
                           [NSNumber numberWithFloat:0.5],
                           nil];
-    if(!isLive)
+    if(!self.isLive)
+    {
         [_topHUD.layer insertSublayer:gradient atIndex:0];
+        [self.view addSubview:_bottomHUD];
+    }
     
     if (_decoder) {
         
@@ -431,6 +430,7 @@ static NSMutableDictionary * gHistory;
         _leftLabel.hidden = YES;
         _infoButton.hidden = YES;
     }
+
 }
 
 - (void)viewDidLoad
@@ -452,6 +452,15 @@ static NSMutableDictionary * gHistory;
 
 -(void) viewWillAppear:(BOOL)animated{
     [super viewWillAppear:YES];
+    if (self.isFullscreen) {
+        _bottomHUD.hidden = NO;
+        [self.navigationController setNavigationBarHidden:NO animated:YES];
+    }
+    else{
+        _bottomHUD.hidden = NO;
+        [self.navigationController setNavigationBarHidden:NO animated:YES];
+    }
+    [[UIApplication sharedApplication] setStatusBarHidden:YES withAnimation:UIStatusBarAnimationNone];
     [[UIApplication sharedApplication] setIdleTimerDisabled:YES];
 }
 
@@ -469,7 +478,7 @@ static NSMutableDictionary * gHistory;
     
     _savedIdleTimer = [[UIApplication sharedApplication] isIdleTimerDisabled];
     
-    [self showHUD: YES];
+    //[self showHUD: YES];
     
     if (_decoder) {
         
@@ -509,7 +518,7 @@ static NSMutableDictionary * gHistory;
     }
 
     [[UIApplication sharedApplication] setIdleTimerDisabled:_savedIdleTimer];
-    
+    [[UIApplication sharedApplication] setStatusBarHidden:NO withAnimation:UIStatusBarAnimationNone];
     [_activityIndicatorView stopAnimating];
     _buffered = NO;
 }
@@ -538,7 +547,12 @@ static NSMutableDictionary * gHistory;
     if (sender.state == UIGestureRecognizerStateEnded) {
         
         if (sender == _tapGestureRecognizer) {
-
+            if (self.isFullscreen) {
+                self.isFullscreen = NO;
+            }
+            else{
+                self.isFullscreen = YES;
+            }
             [self showHUD: _hiddenHUD];
             
         } else if (sender == _doubleTapGestureRecognizer) {
@@ -549,8 +563,7 @@ static NSMutableDictionary * gHistory;
                 frameView.contentMode = UIViewContentModeScaleAspectFill;
             else
                 frameView.contentMode = UIViewContentModeScaleAspectFit;
-            
-        }        
+        }
     }
 }
 
@@ -1189,6 +1202,17 @@ static NSMutableDictionary * gHistory;
 {
     _hiddenHUD = !show;
     _panGestureRecognizer.enabled = _hiddenHUD;
+    
+    if (self.isFullscreen) {
+        _bottomHUD.hidden = YES;
+        [self.navigationController setNavigationBarHidden:YES animated:YES];
+    }
+    else{
+        _bottomHUD.hidden = NO;
+        [self.navigationController setNavigationBarHidden:NO animated:YES];
+    }
+    
+    /*
 
     [[UIApplication sharedApplication] setIdleTimerDisabled:YES];
     
@@ -1202,7 +1226,7 @@ static NSMutableDictionary * gHistory;
                          _bottomHUD.alpha = alpha;
                      }
                      completion:nil];
-    
+ */   
 }
 
 - (void) fullscreenMode: (BOOL) on

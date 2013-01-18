@@ -211,12 +211,18 @@
         parameters[KxMovieParameterDisableDeinterlacing] = @(YES);
     
     KxMovieViewController *vc = [KxMovieViewController movieViewControllerWithContentPath:path
-                                                                               parameters:parameters];
+    parameters:parameters];
+    
     vc.isFullscreen = YES;
-    vc.isLive = YES;
-    [vc fullscreenMode:NO];
-    vc.name = @"xxxxxx一部电影";
-    [self presentViewController:vc animated:YES completion:nil];
+    vc.isLive = NO;
+
+    UINavigationController *navigationController = [[UINavigationController alloc] initWithRootViewController:vc];
+    [vc.navigationItem setTitle:@"Video Test"];
+    UIBarButtonItem *doneButton = [[UIBarButtonItem alloc] initWithTitle:@"关闭" style:UIBarButtonItemStyleDone target:self action:@selector(dismissModalViewControllerAnimated:)];
+    
+    vc.navigationItem.rightBarButtonItem = doneButton;
+    
+    [self presentViewController:navigationController animated:YES completion:nil];
     //[self.navigationController pushViewController:vc animated:YES];    
 }
 
