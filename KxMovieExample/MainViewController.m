@@ -210,6 +210,9 @@
     if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone)
         parameters[KxMovieParameterDisableDeinterlacing] = @(YES);
     
+    // disable buffering
+    // parameters[KxMovieParameterMinBufferedDuration] = @(0.0f);
+    
     KxMovieViewController *vc = [KxMovieViewController movieViewControllerWithContentPath:path
     parameters:parameters];
     
