@@ -27,6 +27,7 @@ FFMPEG_BUILD_ARGS_SIM = [
 '--cpu=i386',
 "--extra-ldflags='-arch i386'",
 "--extra-cflags='-arch i386'",
+'--disable-asm',
 ]
 
 FFMPEG_BUILD_ARGS_ARMV7 = [
@@ -42,7 +43,8 @@ FFMPEG_BUILD_ARGS_ARMV7 = [
 '--disable-armv5te',
 '--disable-armv6',
 '--disable-armv6t2',
-'--disable-armvfp',
+'--disable-vfp',
+'--disable-asm',
 ]
 
 FFMPEG_BUILD_ARGS_ARMV7S = [
@@ -58,7 +60,8 @@ FFMPEG_BUILD_ARGS_ARMV7S = [
 '--disable-armv5te',
 '--disable-armv6',
 '--disable-armv6t2',
-'--disable-armvfp',
+'--disable-vfp',
+'--disable-asm',
 ]
 
 FFMPEG_BUILD_ARGS = [
@@ -260,7 +263,6 @@ task :copy_movie do
 end	
 
 ##
-task :clean_movie => [:clean_movie_debug, :clean_movie_release]
 task :clean => [:clean_movie_debug, :clean_movie_release, :clean_ffmpeg]
 task :build_ffmpeg => [:check_gas_preprocessor, :build_ffmpeg_i386, :build_ffmpeg_armv7, :build_ffmpeg_armv7s, :build_ffmpeg_universal]
 #task :build_movie => [:build_movie_debug, :copy_movie] 
