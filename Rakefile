@@ -16,8 +16,8 @@ LIB_PATH='/usr/lib/system'
 PLATOFRM_PATH_SIM ='/iPhoneSimulator.platform'
 PLATOFRM_PATH_IOS ='/iPhoneOS.platform'
 #SDK_PATH_SIM ='/Developer/SDKs/iPhoneSimulator5.1.sdk'
-SDK_PATH_SIM ='/Developer/SDKs/iPhoneSimulator6.1.sdk'
-SDK_PATH_IOS='/Developer/SDKs/iPhoneOS6.1.sdk'
+SDK_PATH_SIM ='/Developer/SDKs/iPhoneSimulator6.0.sdk'
+SDK_PATH_IOS='/Developer/SDKs/iPhoneOS6.0.sdk'
 
 
 FFMPEG_BUILD_ARGS_SIM = [
@@ -27,7 +27,6 @@ FFMPEG_BUILD_ARGS_SIM = [
 '--cpu=i386',
 "--extra-ldflags='-arch i386'",
 "--extra-cflags='-arch i386'",
-'--disable-asm',
 ]
 
 FFMPEG_BUILD_ARGS_ARMV7 = [
@@ -43,8 +42,7 @@ FFMPEG_BUILD_ARGS_ARMV7 = [
 '--disable-armv5te',
 '--disable-armv6',
 '--disable-armv6t2',
-'--disable-vfp',
-'--disable-asm',
+'--disable-armvfp',
 ]
 
 FFMPEG_BUILD_ARGS_ARMV7S = [
@@ -60,8 +58,7 @@ FFMPEG_BUILD_ARGS_ARMV7S = [
 '--disable-armv5te',
 '--disable-armv6',
 '--disable-armv6t2',
-'--disable-vfp',
-'--disable-asm',
+'--disable-armvfp',
 ]
 
 FFMPEG_BUILD_ARGS = [
@@ -209,8 +206,8 @@ end
 
 def cleanMovieLib(config)
 	buildDir = Pathname.new 'tmp/build'	
-  	system_or_exit "xcodebuild -project kxmovie.xcodeproj -target kxmovie -configuration #{config} -sdk iphoneos6.1 clean SYMROOT=#{buildDir}"
-	system_or_exit "xcodebuild -project kxmovie.xcodeproj -target kxmovie -configuration #{config} -sdk iphonesimulator6.1 clean SYMROOT=#{buildDir}"  	
+  	system_or_exit "xcodebuild -project kxmovie.xcodeproj -target kxmovie -configuration #{config} -sdk iphoneos6.0 clean SYMROOT=#{buildDir}"
+	system_or_exit "xcodebuild -project kxmovie.xcodeproj -target kxmovie -configuration #{config} -sdk iphonesimulator6.0 clean SYMROOT=#{buildDir}"  	
 end
 
 desc "Clean libkxmovie-debug"
@@ -226,22 +223,22 @@ end
 desc "Build libkxmovie-debug"
 task :build_movie_debug do
 	buildDir = Pathname.new 'tmp/build'
-	system_or_exit "xcodebuild -project kxmovie.xcodeproj -target kxmovie -configuration Debug -sdk iphoneos6.1 build SYMROOT=#{buildDir} -arch armv7s"			
+	system_or_exit "xcodebuild -project kxmovie.xcodeproj -target kxmovie -configuration Debug -sdk iphoneos6.0 build SYMROOT=#{buildDir} -arch armv7s"			
 	FileUtils.move Pathname.new('tmp/build/Debug-iphoneos/libkxmovie.a'), Pathname.new('tmp/build/Debug-iphoneos/libkxmovie_armv7s.a')	
 
-	system_or_exit "xcodebuild -project kxmovie.xcodeproj -target kxmovie -configuration Debug -sdk iphoneos6.1 build SYMROOT=#{buildDir} -arch armv7"		
-	system_or_exit "xcodebuild -project kxmovie.xcodeproj -target kxmovie -configuration Debug -sdk iphonesimulator6.1 build SYMROOT=#{buildDir}"	
+	system_or_exit "xcodebuild -project kxmovie.xcodeproj -target kxmovie -configuration Debug -sdk iphoneos6.0 build SYMROOT=#{buildDir} -arch armv7"		
+	system_or_exit "xcodebuild -project kxmovie.xcodeproj -target kxmovie -configuration Debug -sdk iphonesimulator6.0 build SYMROOT=#{buildDir}"	
 	system_or_exit "lipo -create -arch armv7 tmp/build/Debug-iphoneos/libkxmovie.a -arch armv7 tmp/build/Debug-iphoneos/libkxmovie_armv7s.a -arch i386 tmp/build/Debug-iphonesimulator/libkxmovie.a -output tmp/build/libkxmovie.a"
 end
 
 desc "Build libkxmovie-release"
 task :build_movie_release do
 	buildDir = Pathname.new 'tmp/build'
-	system_or_exit "xcodebuild -project kxmovie.xcodeproj -target kxmovie -configuration Release -sdk iphoneos6.1 build SYMROOT=#{buildDir} -arch armv7s"	
+	system_or_exit "xcodebuild -project kxmovie.xcodeproj -target kxmovie -configuration Release -sdk iphoneos6.0 build SYMROOT=#{buildDir} -arch armv7s"	
 	FileUtils.move Pathname.new('tmp/build/Release-iphoneos/libkxmovie.a'), Pathname.new('tmp/build/Release-iphoneos/libkxmovie_armv7s.a')	
 
-	system_or_exit "xcodebuild -project kxmovie.xcodeproj -target kxmovie -configuration Release -sdk iphoneos6.1 build SYMROOT=#{buildDir} -arch armv7"	
-	system_or_exit "xcodebuild -project kxmovie.xcodeproj -target kxmovie -configuration Debug -sdk iphonesimulator6.1 build SYMROOT=#{buildDir}"	
+	system_or_exit "xcodebuild -project kxmovie.xcodeproj -target kxmovie -configuration Release -sdk iphoneos6.0 build SYMROOT=#{buildDir} -arch armv7"	
+	system_or_exit "xcodebuild -project kxmovie.xcodeproj -target kxmovie -configuration Debug -sdk iphonesimulator6.0 build SYMROOT=#{buildDir}"	
 	system_or_exit "lipo -create -arch armv7 tmp/build/Release-iphoneos/libkxmovie.a -arch armv7 tmp/build/Release-iphoneos/libkxmovie_armv7s.a -arch i386 tmp/build/Debug-iphonesimulator/libkxmovie.a -output tmp/build/libkxmovie.a"
 	
 	#FileUtils.copy Pathname.new('tmp/build/Release-iphoneos/libkxmovie.a'), buildDir

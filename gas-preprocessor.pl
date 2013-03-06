@@ -367,11 +367,8 @@ sub expand_macros {
 }
 
 close(ASMFILE) or exit 1;
-if ($ENV{GASPP_DEBUG}) {
-    open(ASMFILE, ">&STDOUT");
-} else {
-    open(ASMFILE, "|-", @gcc_cmd) or die "Error running assembler";
-}
+open(ASMFILE, "|-", @gcc_cmd) or die "Error running assembler";
+#open(ASMFILE, ">/tmp/a.S") or die "Error running assembler";
 
 my @sections;
 my $num_repts;
@@ -436,12 +433,8 @@ foreach my $line (@pass1_lines) {
         $thumb_labels{$1}++;
     }
 
-    if ($line =~ /^\s*((\w+\s*:\s*)?bl?x?(?:..)?(?:\.w)?|\.globl)\s+(\w+)/) {
-        if (exists $thumb_labels{$3}) {
-            print ASMFILE ".thumb_func $3\n";
-        } else {
-            $call_targets{$3}++;
-        }
+    if ($line =~ /^\s*((\w+:)?blx?|\.globl)\s+(\w+)/) {
+        $call_targets{$3}++;
     }
 
     # @l -> lo16()  @ha -> ha16()
@@ -523,9 +516,7 @@ foreach my $line (@pass1_lines) {
 print ASMFILE ".text\n";
 print ASMFILE ".align 2\n";
 foreach my $literal (keys %literal_labels) {
-    my $label = $literal_labels{$literal};
-    print ASMFILE ".set Lval_$label, $literal\n";
-    print ASMFILE "$label: .word Lval_$label\n";
+    print ASMFILE "$literal_labels{$literal}:\n .word $literal\n";
 }
 
 map print(ASMFILE ".thumb_func $_\n"),

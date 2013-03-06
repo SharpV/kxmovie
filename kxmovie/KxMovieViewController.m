@@ -75,7 +75,7 @@ static NSMutableDictionary * gHistory;
 
 #define DEFAULT_DECODE_DURATION   0.1
 #define LOCAL_BUFFERED_DURATION   0.3
-#define NETWORK_BUFFERED_DURATION 3.0
+#define NETWORK_BUFFERED_DURATION 2.0
 
 @interface KxMovieViewController () {
 
@@ -167,7 +167,7 @@ static NSMutableDictionary * gHistory;
         _moviePosition = 0;
         _startTime = -1;
         self.wantsFullScreenLayout = YES;
-        
+        self.playPath = path;
         _decodeDuration = DEFAULT_DECODE_DURATION;
         _minBufferedDuration = LOCAL_BUFFERED_DURATION;
         
@@ -535,21 +535,32 @@ static NSMutableDictionary * gHistory;
     if(self.isLive){
         //[self dismissModalViewControllerAnimated:YES];
     }
-    NSLog(@"applicationWillResignActive");
+    NSLog(@"...........applicationWillResignActive");
 }
 
 
 - (void) applicationDidBecomeActive: (NSNotification *)notification
 {
-    [self play];
-    NSLog(@"applicationWillResignActive");
+    if (self.presentingViewController || !self.navigationController){
+        NSLog(@"[self dismissViewControllerAnimated:YES completion:nil];  %@", self);
+        [self dismissViewControllerAnimated:YES completion:nil];
+    }
+    else
+    {
+        [self.navigationController popViewControllerAnimated:YES];
+    }
+    
+    self.isAlive = NO;
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"reopenPlayer" object:self];
+
+    NSLog(@".............applicationDidBecomeActive");
 }
 
 - (void) applicationWillActive: (NSNotification *)notification
 {
     [self showHUD:YES];
     //[self restorePlay];
-    NSLog(@"applicationWillActive");
+    NSLog(@"............ applicationWillActive");
 }
 
 #pragma mark - gesture recognizer
