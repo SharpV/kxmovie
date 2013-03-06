@@ -280,7 +280,7 @@ static NSMutableDictionary * gHistory;
     _doneButton.showsTouchWhenHighlighted = YES;
     [_doneButton addTarget:self action:@selector(doneDidTouch:) forControlEvents:UIControlEventTouchUpInside];
     
-    _progressLabel = [[UILabel alloc] initWithFrame:CGRectMake(48,5,50,20)];
+    _progressLabel = [[UILabel alloc] initWithFrame:CGRectMake(48,35,50,20)];
     _progressLabel.backgroundColor = [UIColor clearColor];
     _progressLabel.opaque = NO;
     _progressLabel.adjustsFontSizeToFitWidth = NO;
@@ -290,7 +290,7 @@ static NSMutableDictionary * gHistory;
     _progressLabel.text = @"00:00:00";
     _progressLabel.font = [UIFont systemFontOfSize:12];
     
-    _progressSlider = [[UISlider alloc] initWithFrame:CGRectMake(100, 5, width-182, 20)];
+    _progressSlider = [[UISlider alloc] initWithFrame:CGRectMake(100, 35, width-182, 20)];
     _progressSlider.autoresizingMask = UIViewAutoresizingFlexibleWidth;
     _progressSlider.continuous = NO;
     _progressSlider.value = 0;
@@ -347,21 +347,21 @@ static NSMutableDictionary * gHistory;
     width = _bottomHUD.bounds.size.width;
     
     _rewindButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    _rewindButton.frame = CGRectMake(width * 0.5 - 65, 22, 40, 40);
+    _rewindButton.frame = CGRectMake(width * 0.5 - 65, 4, 40, 40);
     _rewindButton.backgroundColor = [UIColor clearColor];
     _rewindButton.showsTouchWhenHighlighted = YES;
     [_rewindButton setImage:[UIImage imageNamed:@"kxmovie.bundle/playback_rew"] forState:UIControlStateNormal];
     [_rewindButton addTarget:self action:@selector(rewindDidTouch:) forControlEvents:UIControlEventTouchUpInside];
     
     _playButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    _playButton.frame = CGRectMake(width * 0.5 - 20, 22, 40, 40);
+    _playButton.frame = CGRectMake(width * 0.5 - 20, 4, 40, 40);
     _playButton.backgroundColor = [UIColor clearColor];
     _playButton.showsTouchWhenHighlighted = YES;
     [_playButton setImage:[UIImage imageNamed:@"kxmovie.bundle/playback_play"] forState:UIControlStateNormal];
     [_playButton addTarget:self action:@selector(playDidTouch:) forControlEvents:UIControlEventTouchUpInside];
     
     _forwardButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    _forwardButton.frame = CGRectMake(width * 0.5 + 25, 22, 40, 40);
+    _forwardButton.frame = CGRectMake(width * 0.5 + 25, 4, 40, 40);
     _forwardButton.backgroundColor = [UIColor clearColor];
     _forwardButton.showsTouchWhenHighlighted = YES;
     [_forwardButton setImage:[UIImage imageNamed:@"kxmovie.bundle/playback_ff"] forState:UIControlStateNormal];
@@ -438,7 +438,7 @@ static NSMutableDictionary * gHistory;
     [super viewDidLoad];
     [self showHUD: _hiddenHUD];
     UIView *frameView = [self frameView];
-    
+    //[[UIApplication sharedApplication] setStatusBarHidden:YES withAnimation:UIStatusBarAnimationNone];
     if (frameView.contentMode == UIViewContentModeScaleAspectFit)
         frameView.contentMode = UIViewContentModeScaleAspectFill;
     else
@@ -462,6 +462,9 @@ static NSMutableDictionary * gHistory;
         _bottomHUD.hidden = NO;
         [self.navigationController setNavigationBarHidden:NO animated:YES];
     }
+
+    UIBarButtonItem *doneButton = [[UIBarButtonItem alloc] initWithTitle:@"关闭" style:UIBarButtonItemStyleDone target:self action:@selector(doneDidTouch:)];
+    self.navigationItem.rightBarButtonItem = doneButton;
     [[UIApplication sharedApplication] setStatusBarHidden:YES withAnimation:UIStatusBarAnimationNone];
     [[UIApplication sharedApplication] setIdleTimerDisabled:YES];
 }
@@ -664,7 +667,6 @@ static NSMutableDictionary * gHistory;
 
 - (void) doneDidTouch: (id) sender
 {
-    
     if (self.presentingViewController || !self.navigationController){
         NSLog(@"[self dismissViewControllerAnimated:YES completion:nil];  %@", self);
         [self dismissViewControllerAnimated:YES completion:nil];
@@ -1063,9 +1065,7 @@ static NSMutableDictionary * gHistory;
 {
     if (!self.playing)
         return;
-    
-    //CGFloat interval = [self presentFrame];
-    
+        
     if (_buffered && _bufferedDuration > _minBufferedDuration) {
         
         _buffered = NO;
@@ -1089,14 +1089,14 @@ static NSMutableDictionary * gHistory;
             return;
         }
 
-        if (!_buffered) {
+        if (_minBufferedDuration > 0 && !_buffered) {
 
             _buffered = YES;
             [_activityIndicatorView startAnimating];            
         }
     }
     
-    if (_bufferedDuration < _minBufferedDuration) {
+    if (_bufferedDuration <= _minBufferedDuration) {
         
         [self scheduleDecodeFrames];
     }
@@ -1506,15 +1506,11 @@ static NSMutableDictionary * gHistory;
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
 {
-    if ( UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad )
-    {
-        return (interfaceOrientation == UIInterfaceOrientationLandscapeLeft || interfaceOrientation == UIInterfaceOrientationLandscapeRight);
-    }
-    return NO;
+    return (interfaceOrientation == UIInterfaceOrientationLandscapeLeft || interfaceOrientation == UIInterfaceOrientationLandscapeRight);
 }
 
 -(BOOL)shouldAutorotate{
-    return NO;
+    return YES;
 }
 
 @end

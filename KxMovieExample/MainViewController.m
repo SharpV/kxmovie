@@ -211,6 +211,9 @@
     if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone)
         parameters[KxMovieParameterDisableDeinterlacing] = @(YES);
     
+    // disable buffering
+    // parameters[KxMovieParameterMinBufferedDuration] = @(0.0f);
+    
     KxMovieViewController *vc = [KxMovieViewController movieViewControllerWithContentPath:path
     parameters:parameters];
     
@@ -219,9 +222,9 @@
 
     UINavigationController *navigationController = [[UINavigationController alloc] initWithRootViewController:vc];
     [vc.navigationItem setTitle:@"Video Test"];
-    UIBarButtonItem *doneButton = [[UIBarButtonItem alloc] initWithTitle:@"关闭" style:UIBarButtonItemStyleDone target:self action:@selector(dismissModalViewControllerAnimated:)];
+    //UIBarButtonItem *doneButton = [[UIBarButtonItem alloc] initWithTitle:@"关闭" style:UIBarButtonItemStyleDone target:self action:@selector(dismissModalViewControllerAnimated:)];
     
-    vc.navigationItem.rightBarButtonItem = doneButton;
+    //vc.navigationItem.rightBarButtonItem = doneButton;
     
     [self presentViewController:navigationController animated:YES completion:nil];
     //[self.navigationController pushViewController:vc animated:YES];    
