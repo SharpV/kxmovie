@@ -45,7 +45,7 @@ static NSString * errorMessage (kxMovieError errorCode)
             return @"";
             
         case kxMovieErrorOpenFile:
-            return NSLocalizedString(@"Unable to open file", nil);
+            return NSLocalizedString(@"当前设备正忙， 请稍后再试", nil);
             
         case kxMovieErrorStreamInfoNotFound:
             return NSLocalizedString(@"Unable to find stream information", nil);

@@ -35,6 +35,7 @@
             @"http://santai.tv/vod/test/test_format_1.3gp",
             @"http://santai.tv/vod/test/test_format_1.mp4",
             @"http://202.198.100.1:81//p=14.ts",
+            @"http://liveipad.wasu.cn/cctv2_ipad/z.m3u8",
             //@"rtsp://184.72.239.149/vod/mp4://BigBuckBunny_175k.mov",
             //@"http://santai.tv/vod/test/BigBuckBunny_175k.mov",
         

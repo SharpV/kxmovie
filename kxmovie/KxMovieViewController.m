@@ -198,7 +198,7 @@ static NSMutableDictionary * gHistory;
 
 - (void) dealloc
 {
-    // NSLog(@"%@ dealloc", self);
+    NSLog(@"%@ dealloc", self);
     
     [self pause];
     self.isAlive = NO;
@@ -452,6 +452,8 @@ static NSMutableDictionary * gHistory;
 
 -(void) viewWillAppear:(BOOL)animated{
     [super viewWillAppear:YES];
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"openPlayer" object:self];
+
     if (self.isFullscreen) {
         _bottomHUD.hidden = NO;
         [self.navigationController setNavigationBarHidden:NO animated:YES];
@@ -490,10 +492,9 @@ static NSMutableDictionary * gHistory;
     }
    
         
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(applicationWillResignActive:)
-                                                 name:UIApplicationWillResignActiveNotification
-                                               object:[UIApplication sharedApplication]];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationWillResignActive:) name:UIApplicationWillResignActiveNotification object:[UIApplication sharedApplication]];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationDidBecomeActive:) name: UIApplicationDidBecomeActiveNotification object:[UIApplication sharedApplication]];
+
     [[UIApplication sharedApplication] setIdleTimerDisabled:YES];
 
 }
@@ -503,7 +504,8 @@ static NSMutableDictionary * gHistory;
 {    
     [[NSNotificationCenter defaultCenter] removeObserver:self];
     [super viewWillDisappear:animated];
-    
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"closePlayer" object:self];
+
     [_activityIndicatorView stopAnimating];
     
     if (_decoder) {
@@ -533,10 +535,17 @@ static NSMutableDictionary * gHistory;
     NSLog(@"applicationWillResignActive");
 }
 
+
+- (void) applicationDidBecomeActive: (NSNotification *)notification
+{
+    [self play];
+    NSLog(@"applicationWillResignActive");
+}
+
 - (void) applicationWillActive: (NSNotification *)notification
 {
     [self showHUD:YES];
-    [self restorePlay];
+    //[self restorePlay];
     NSLog(@"applicationWillActive");
 }
 
