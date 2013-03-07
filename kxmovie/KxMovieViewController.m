@@ -15,6 +15,7 @@
 #import "KxMovieDecoder.h"
 #import "KxAudioManager.h"
 #import "KxMovieGLView.h"
+#import "SVProgressHUD.h"
 
 NSString * const KxMovieParameterDecodeDuration = @"KxMovieParameterDecodeDuration";
 NSString * const KxMovieParameterMinBufferedDuration = @"KxMovieParameterMinBufferedDuration";
@@ -95,6 +96,8 @@ static NSMutableDictionary * gHistory;
     BOOL                _fitMode;
     BOOL                _infoMode;
     BOOL                _restoreIdleTimer;
+    BOOL                _needReopen;
+    NSString            *_playPath;
 
     KxMovieGLView       *_glView;
     UIImageView         *_imageView;
@@ -137,7 +140,7 @@ static NSMutableDictionary * gHistory;
 
 @implementation KxMovieViewController
 
-@synthesize isLive, isAlive, isFullscreen, name, playPath;
+@synthesize isLive, isAlive, isFullscreen, name, loadTitle;
 
 + (void)initialize
 {
@@ -156,23 +159,26 @@ static NSMutableDictionary * gHistory;
 - (id) initWithContentPath: (NSString *) path
                 parameters: (NSDictionary *) parameters
 {
-
+    
     NSAssert(path.length > 0, @"empty path");
-    playPath = path;
+
     self = [super initWithNibName:nil bundle:nil];
     if (self) {
-        self.isLive = NO;
+        self.isLive = YES;
         self.isFullscreen = YES;
         self.isAlive = YES;
         _moviePosition = 0;
         _startTime = -1;
+        _needReopen = NO;
         self.wantsFullScreenLayout = YES;
-        self.playPath = path;
+        _playPath = path;
         _decodeDuration = DEFAULT_DECODE_DURATION;
         _minBufferedDuration = LOCAL_BUFFERED_DURATION;
-        
+        self.loadTitle = [parameters objectForKey:@"loadTitle"];
         _parameters = parameters;
-        
+        if (!self.loadTitle) {
+            self.loadTitle = @"正在为您加载节目, 请稍后...";
+        }
         __weak KxMovieViewController *weakSelf = self;
         
         dispatch_async(dispatch_get_global_queue(0, 0), ^{
@@ -201,7 +207,6 @@ static NSMutableDictionary * gHistory;
     NSLog(@"%@ dealloc", self);
     
     [self pause];
-    self.isAlive = NO;
     [[NSNotificationCenter defaultCenter] removeObserver:self];
     
     if (_dispatchQueue) {
@@ -221,6 +226,7 @@ static NSMutableDictionary * gHistory;
     
     _activityIndicatorView = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle: UIActivityIndicatorViewStyleWhiteLarge];
     _activityIndicatorView.center = self.view.center;
+    
     _activityIndicatorView.autoresizingMask = UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin;
     
     [self.view addSubview:_activityIndicatorView];
@@ -260,15 +266,18 @@ static NSMutableDictionary * gHistory;
 
     BOOL isLandscape = UIInterfaceOrientationIsLandscape([[UIDevice currentDevice] orientation]);
     //NSLog(@"bounds is : %f %f", bounds.size.width, bounds.size.height);
-    if ( UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad || isLandscape)
+    
+    if (isLandscape)
     {
-        _doneButton.frame = CGRectMake(bounds.size.height-60, 2, 50, 36);
+        _doneButton.frame = CGRectMake(2, bounds.size.width-60, 50, 36);
         //noOfRows = self.numberOfColumns;
     }
     else{
-        _doneButton.frame = CGRectMake(bounds.size.width-60, 2, 50, 36);
+        _doneButton.frame = CGRectMake(bounds.size.width-60, 2, width-60, 36);
     }
-    _doneButton.backgroundColor = [UIColor clearColor];
+     
+
+    _doneButton.backgroundColor = [UIColor lightGrayColor];
     _doneButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentCenter;
     _doneButton.autoresizingMask = UIViewAutoresizingFlexibleHeight;
     _doneButton.contentVerticalAlignment = UIControlContentHorizontalAlignmentCenter;
@@ -279,6 +288,7 @@ static NSMutableDictionary * gHistory;
     _doneButton.titleLabel.font = [UIFont fontWithName:@"TrebuchetMS-Bold" size:14.5];
     _doneButton.showsTouchWhenHighlighted = YES;
     [_doneButton addTarget:self action:@selector(doneDidTouch:) forControlEvents:UIControlEventTouchUpInside];
+    [_topHUD addSubview:_doneButton];
     
     _progressLabel = [[UILabel alloc] initWithFrame:CGRectMake(48,35,50,20)];
     _progressLabel.backgroundColor = [UIColor clearColor];
@@ -297,22 +307,22 @@ static NSMutableDictionary * gHistory;
     [_progressSlider setThumbImage:[UIImage imageNamed:@"kxmovie.bundle/sliderthumb"]
                           forState:UIControlStateNormal];
     
-/*
+
     titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(10,0, 240, 40)];
     titleLabel.backgroundColor = [UIColor clearColor];
     //titleLabel.adjustsFontSizeToFitWidth = YES;
     titleLabel.font = [UIFont fontWithName:@"TrebuchetMS-Bold" size:14];
     titleLabel.textAlignment = UITextAlignmentLeft;
     titleLabel.textColor = [UIColor whiteColor];
-    NSString *tmpString = @" 正在播放: ";
+    //NSString *tmpString = @" 正在播放: ";
     if (self.name) {
-        titleLabel.text = [tmpString stringByAppendingString:self.name];
+        titleLabel.text = self.name;//[tmpString stringByAppendingString:self.name];
     }
     //titleLabel.font = [UIFont systemFontOfSize:13];
     titleLabel.autoresizingMask = UIViewAutoresizingFlexibleHeight;
     [_topHUD addSubview:titleLabel];
 
-*/
+
     _leftLabel = [[UILabel alloc] initWithFrame:CGRectMake(width-80,5,60,20)];
     _leftLabel.backgroundColor = [UIColor clearColor];
     _leftLabel.opaque = NO;
@@ -418,6 +428,8 @@ static NSMutableDictionary * gHistory;
         [self.view addSubview:_bottomHUD];
     }
     
+    //[self.view addSubview:_topHUD];
+    
     if (_decoder) {
         
         [self setupPresentView];
@@ -433,12 +445,28 @@ static NSMutableDictionary * gHistory;
 
 }
 
+- (void)viewDidDisappear:(BOOL)animated{
+
+    [super viewDidDisappear:NO];
+    if (_needReopen) {
+        NSLog(@"kxmovie will reopen: path is %@ ", _decoder.path);
+        NSMutableDictionary *userInfo = [[NSMutableDictionary alloc]initWithCapacity:20];
+        //NSDictionary *userInfo = [NSDictionary dictionaryWithObject:_decoder.path forKey:@"path"];
+        [userInfo setValue:self.name forKey:@"name"];
+        [userInfo setValue:_decoder.path forKey:@"path"];
+
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"reopenPlayer" object:self userInfo:userInfo];
+    }
+
+}
+
 - (void)viewDidLoad
 {
     [super viewDidLoad];
     [self showHUD: _hiddenHUD];
     UIView *frameView = [self frameView];
-    //[[UIApplication sharedApplication] setStatusBarHidden:YES withAnimation:UIStatusBarAnimationNone];
+    [self.navigationController setNavigationBarHidden:NO animated:YES];
+
     if (frameView.contentMode == UIViewContentModeScaleAspectFit)
         frameView.contentMode = UIViewContentModeScaleAspectFill;
     else
@@ -452,14 +480,15 @@ static NSMutableDictionary * gHistory;
 
 -(void) viewWillAppear:(BOOL)animated{
     [super viewWillAppear:YES];
+    [SVProgressHUD showWithStatus:self.loadTitle];
     [[NSNotificationCenter defaultCenter] postNotificationName:@"openPlayer" object:self];
 
     if (self.isFullscreen) {
-        _bottomHUD.hidden = NO;
+        _bottomHUD.hidden = YES;
         [self.navigationController setNavigationBarHidden:NO animated:YES];
     }
     else{
-        _bottomHUD.hidden = NO;
+        _bottomHUD.hidden = YES;
         [self.navigationController setNavigationBarHidden:NO animated:YES];
     }
 
@@ -480,7 +509,8 @@ static NSMutableDictionary * gHistory;
     
     if (_infoMode)
         [self showInfoView:NO animated:NO];
-    
+    [self.navigationController setNavigationBarHidden:NO animated:YES];
+
     _savedIdleTimer = [[UIApplication sharedApplication] isIdleTimerDisabled];
     
     //[self showHUD: YES];
@@ -491,10 +521,9 @@ static NSMutableDictionary * gHistory;
         
     } else {
 
-        [_activityIndicatorView startAnimating];
+        //[_activityIndicatorView startAnimating];
     }
-   
-        
+    
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationWillResignActive:) name:UIApplicationWillResignActiveNotification object:[UIApplication sharedApplication]];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationDidBecomeActive:) name: UIApplicationDidBecomeActiveNotification object:[UIApplication sharedApplication]];
 
@@ -508,7 +537,6 @@ static NSMutableDictionary * gHistory;
     [[NSNotificationCenter defaultCenter] removeObserver:self];
     [super viewWillDisappear:animated];
     [[NSNotificationCenter defaultCenter] postNotificationName:@"closePlayer" object:self];
-
     [_activityIndicatorView stopAnimating];
     NSLog(@"Kxmovie: viewWillDisappear");
     if (_decoder) {
@@ -525,6 +553,8 @@ static NSMutableDictionary * gHistory;
     [[UIApplication sharedApplication] setIdleTimerDisabled:_savedIdleTimer];
     [[UIApplication sharedApplication] setStatusBarHidden:NO withAnimation:UIStatusBarAnimationNone];
     [_activityIndicatorView stopAnimating];
+    [SVProgressHUD dismiss];
+
     _buffered = NO;
 }
 
@@ -534,62 +564,27 @@ static NSMutableDictionary * gHistory;
 
     [self showHUD:YES];
     [self pause];
-    [_decoder closeFile];
     NSLog(@"kxmovie...........applicationWillResignActive");
 }
 
 
 - (void) applicationDidBecomeActive: (NSNotification *)notification
 {
-    NSLog(@"kxmovie........... applicationDidBecomeActive");
-    _moviePosition = 0;
-    _startTime = -1;
-    _decodeDuration = 0.1;
-    NSLog(@"open %@", self.playPath);
-    [_decoder openFile:self.playPath error:nil];
-    //[self restorePlay];
-    /*
-     if (_dispatchQueue) {
-     dispatch_release(_dispatchQueue);
-     _dispatchQueue = NULL;
-     }
-    __weak KxMovieViewController *weakSelf = self;
-    
-    dispatch_async(dispatch_get_global_queue(0, 0), ^{
-        
-        NSError *error;
-        KxMovieDecoder *decoder;
-        decoder = [KxMovieDecoder movieDecoderWithContentPath:self.playPath error:&error];
-        
-        NSLog(@"KxMovie load video %@", self.playPath);
-        
-        __strong KxMovieViewController *strongSelf = weakSelf;
-        if (strongSelf) {
-            
-            dispatch_sync(dispatch_get_main_queue(), ^{
-                
-                [strongSelf setMovieDecoder:decoder withError:error];
-            });
-        }
-    });
-     */
-    //[self restorePlay];
-
-    /*
+    NSLog(@"Kxmovie..........applicationDidBecomeActive");
+  
     if (self.presentingViewController || !self.navigationController){
-        NSLog(@"[self dismissViewControllerAnimated:YES completion:nil];  %@", self);
+        NSLog(@"[dismissViewControllerAnimated when applicationDidBecomeActive  %@", _decoder.path);
         [self dismissViewControllerAnimated:YES completion:nil];
+        [self.presentingViewController dismissViewControllerAnimated:YES completion:nil];
     }
     else
     {
         [self.navigationController popViewControllerAnimated:YES];
     }
-     */
+    _needReopen = YES;
     
     //[self play];
-    [[NSNotificationCenter defaultCenter] postNotificationName:@"openPlayer" object:self];
 
-    NSLog(@"Kxmovie..........applicationDidBecomeActive");
 }
 
 - (void) applicationWillActive: (NSNotification *)notification
@@ -722,7 +717,7 @@ static NSMutableDictionary * gHistory;
     {
         [self.navigationController popViewControllerAnimated:YES];
     }
-        
+    [SVProgressHUD dismiss];
     self.isAlive = NO;
 }
 
@@ -761,8 +756,7 @@ static NSMutableDictionary * gHistory;
 - (void) setMovieDecoder: (KxMovieDecoder *) decoder
                withError: (NSError *) error
 {
-    NSLog(@"setMovieDecoder");
-        
+    
     if (!error && decoder) {
         
         _decoder        = decoder;
@@ -807,12 +801,12 @@ static NSMutableDictionary * gHistory;
             _progressSlider.hidden  = NO;
             _leftLabel.hidden       = YES;
             _infoButton.hidden      = YES;
-            
+            [self restorePlay];
             if (_activityIndicatorView.isAnimating) {
                 
                 [_activityIndicatorView stopAnimating];
                 // if (self.view.window)
-                [self restorePlay];
+                //[self restorePlay];
             }
         }
         
@@ -820,10 +814,12 @@ static NSMutableDictionary * gHistory;
         
          if (self.isViewLoaded && self.view.window) {
         
-             [_activityIndicatorView stopAnimating];
+             //[_activityIndicatorView stopAnimating];
+
              [self handleDecoderMovieError: error];
          }
     }
+    [SVProgressHUD dismiss];
 }
 
 - (void) restorePlay
@@ -1116,7 +1112,8 @@ static NSMutableDictionary * gHistory;
     if (_buffered && _bufferedDuration > _minBufferedDuration) {
         
         _buffered = NO;
-        [_activityIndicatorView stopAnimating];        
+        [_activityIndicatorView stopAnimating];
+        
     }
     
     CGFloat interval = 0;
@@ -1261,13 +1258,15 @@ static NSMutableDictionary * gHistory;
     
     if (self.isFullscreen) {
         _bottomHUD.hidden = YES;
+        _topHUD.hidden = YES;
         [self.navigationController setNavigationBarHidden:YES animated:YES];
     }
     else{
-        _bottomHUD.hidden = NO;
+        _bottomHUD.hidden = YES;
+        _topHUD.hidden = YES;
         [self.navigationController setNavigationBarHidden:NO animated:YES];
     }
-    
+
     /*
 
     [[UIApplication sharedApplication] setIdleTimerDisabled:YES];

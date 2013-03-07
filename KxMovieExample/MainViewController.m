@@ -219,12 +219,12 @@
     
     vc.isFullscreen = YES;
     vc.isLive = NO;
-
+    
     UINavigationController *navigationController = [[UINavigationController alloc] initWithRootViewController:vc];
     [vc.navigationItem setTitle:@"Video Test"];
-    //UIBarButtonItem *doneButton = [[UIBarButtonItem alloc] initWithTitle:@"关闭" style:UIBarButtonItemStyleDone target:self action:@selector(dismissModalViewControllerAnimated:)];
+    UIBarButtonItem *doneButton = [[UIBarButtonItem alloc] initWithTitle:@"关闭" style:UIBarButtonItemStyleDone target:self action:@selector(dismissModalViewControllerAnimated:)];
     
-    //vc.navigationItem.rightBarButtonItem = doneButton;
+    vc.navigationItem.rightBarButtonItem = doneButton;
     
     [self presentViewController:navigationController animated:YES completion:nil];
     //[self.navigationController pushViewController:vc animated:YES];    

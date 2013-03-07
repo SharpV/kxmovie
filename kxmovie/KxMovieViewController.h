@@ -27,7 +27,7 @@ extern NSString * const KxMovieParameterDisableDeinterlacing;   // BOOL
 @property (readwrite) BOOL isLive;
 @property (readwrite) BOOL isAlive;
 @property (nonatomic, retain) NSString *name;
-@property (nonatomic, retain) NSString *playPath;
+@property (nonatomic, retain) NSString *loadTitle;
 
 - (void) play;
 - (void) pause;
