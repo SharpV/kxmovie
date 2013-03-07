@@ -620,8 +620,7 @@ static BOOL isNetworkPath (NSString *path)
 
 #pragma mark - private
 
-- (BOOL) openFile: (NSString *) path
-            error: (NSError **) perror
+- (BOOL) openFile: (NSString *) path error: (NSError **) perror
 {
     NSAssert(path, @"nil path");
     NSAssert(!_formatCtx, @"already open");

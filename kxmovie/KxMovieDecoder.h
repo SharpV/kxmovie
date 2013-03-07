@@ -100,7 +100,8 @@ typedef enum {
                              error: (NSError **) perror;
 
 - (BOOL) setupVideoFrameFormat: (KxVideoFrameFormat) format;
-
+- (BOOL) openFile: (NSString *) path error: (NSError **) perror;
+- (void) closeFile;
 - (NSArray *) decodeFrames: (CGFloat) minDuration;
 
 @end

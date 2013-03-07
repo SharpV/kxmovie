@@ -75,7 +75,7 @@ static NSMutableDictionary * gHistory;
 
 #define DEFAULT_DECODE_DURATION   0.1
 #define LOCAL_BUFFERED_DURATION   0.3
-#define NETWORK_BUFFERED_DURATION 2.0
+#define NETWORK_BUFFERED_DURATION 3.0
 
 @interface KxMovieViewController () {
 
@@ -510,7 +510,7 @@ static NSMutableDictionary * gHistory;
     [[NSNotificationCenter defaultCenter] postNotificationName:@"closePlayer" object:self];
 
     [_activityIndicatorView stopAnimating];
-    
+    NSLog(@"Kxmovie: viewWillDisappear");
     if (_decoder) {
         
         [self pause];
@@ -530,17 +530,52 @@ static NSMutableDictionary * gHistory;
 
 - (void) applicationWillResignActive: (NSNotification *)notification
 {
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"closePlayer" object:self];
+
     [self showHUD:YES];
     [self pause];
-    if(self.isLive){
-        //[self dismissModalViewControllerAnimated:YES];
-    }
-    NSLog(@"...........applicationWillResignActive");
+    [_decoder closeFile];
+    NSLog(@"kxmovie...........applicationWillResignActive");
 }
 
 
 - (void) applicationDidBecomeActive: (NSNotification *)notification
 {
+    NSLog(@"kxmovie........... applicationDidBecomeActive");
+    _moviePosition = 0;
+    _startTime = -1;
+    _decodeDuration = 0.1;
+    NSLog(@"open %@", self.playPath);
+    [_decoder openFile:self.playPath error:nil];
+    //[self restorePlay];
+    /*
+     if (_dispatchQueue) {
+     dispatch_release(_dispatchQueue);
+     _dispatchQueue = NULL;
+     }
+    __weak KxMovieViewController *weakSelf = self;
+    
+    dispatch_async(dispatch_get_global_queue(0, 0), ^{
+        
+        NSError *error;
+        KxMovieDecoder *decoder;
+        decoder = [KxMovieDecoder movieDecoderWithContentPath:self.playPath error:&error];
+        
+        NSLog(@"KxMovie load video %@", self.playPath);
+        
+        __strong KxMovieViewController *strongSelf = weakSelf;
+        if (strongSelf) {
+            
+            dispatch_sync(dispatch_get_main_queue(), ^{
+                
+                [strongSelf setMovieDecoder:decoder withError:error];
+            });
+        }
+    });
+     */
+    //[self restorePlay];
+
+    /*
     if (self.presentingViewController || !self.navigationController){
         NSLog(@"[self dismissViewControllerAnimated:YES completion:nil];  %@", self);
         [self dismissViewControllerAnimated:YES completion:nil];
@@ -549,11 +584,12 @@ static NSMutableDictionary * gHistory;
     {
         [self.navigationController popViewControllerAnimated:YES];
     }
+     */
     
-    self.isAlive = NO;
-    [[NSNotificationCenter defaultCenter] postNotificationName:@"reopenPlayer" object:self];
+    //[self play];
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"openPlayer" object:self];
 
-    NSLog(@".............applicationDidBecomeActive");
+    NSLog(@"Kxmovie..........applicationDidBecomeActive");
 }
 
 - (void) applicationWillActive: (NSNotification *)notification
@@ -642,7 +678,7 @@ static NSMutableDictionary * gHistory;
         return;
         
     self.playing = NO;
-   // [_decoder pause];
+    //[_decoder pause];
     [self enableAudio:NO];
     [self updatePlayButton];
     NSLog(@"movie pause");
@@ -686,7 +722,7 @@ static NSMutableDictionary * gHistory;
     {
         [self.navigationController popViewControllerAnimated:YES];
     }
-    
+        
     self.isAlive = NO;
 }
 
