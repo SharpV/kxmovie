@@ -271,6 +271,8 @@ static BOOL isNetworkPath (NSString *path)
     return YES;
 }
 
+static int interrupt_callback(void *ctx);
+
 ////////////////////////////////////////////////////////////////////////////////
 
 @interface KxMovieFrame()
@@ -615,6 +617,7 @@ static BOOL isNetworkPath (NSString *path)
 
 - (void) dealloc
 {
+    NSLog(@"%@ dealloc", self);
     [self closeFile];
 }
 
@@ -666,16 +669,30 @@ static BOOL isNetworkPath (NSString *path)
 - (kxMovieError) openInput: (NSString *) path
 {
     AVFormatContext *formatCtx = NULL;
-
-    if (avformat_open_input(&formatCtx, [path cStringUsingEncoding: NSUTF8StringEncoding], NULL, NULL) < 0)
+    
+    if (_interruptCallback) {
+        
+        formatCtx = avformat_alloc_context();
+        if (!formatCtx)
+            return kxMovieErrorOpenFile;
+        
+        AVIOInterruptCB cb = {interrupt_callback, (__bridge void *)(self)};
+        formatCtx->interrupt_callback = cb;
+    }
+    
+    if (avformat_open_input(&formatCtx, [path cStringUsingEncoding: NSUTF8StringEncoding], NULL, NULL) < 0) {
+        
+        if (formatCtx)
+            avformat_free_context(formatCtx);
         return kxMovieErrorOpenFile;
+    }
     
     if (avformat_find_stream_info(formatCtx, NULL) < 0) {
         
         avformat_close_input(&formatCtx);
         return kxMovieErrorStreamInfoNotFound;
     }
-    
+
     av_dump_format(formatCtx, 0, [path.lastPathComponent cStringUsingEncoding: NSUTF8StringEncoding], false);
     
     _formatCtx = formatCtx;
@@ -837,6 +854,10 @@ static BOOL isNetworkPath (NSString *path)
     _audioStreams = nil;
     
     if (_formatCtx) {
+        
+        _formatCtx->interrupt_callback.opaque = NULL;
+        _formatCtx->interrupt_callback.callback = NULL;
+        
         avformat_close_input(&_formatCtx);
         _formatCtx = NULL;
     }
@@ -1101,6 +1122,13 @@ static BOOL isNetworkPath (NSString *path)
     return frame;
 }
 
+- (BOOL) interruptDecoder
+{
+    if (_interruptCallback)
+        return _interruptCallback();
+    return NO;
+}
+
 #pragma mark - public
 
 - (BOOL) setupVideoFrameFormat: (KxVideoFrameFormat) format
@@ -1179,7 +1207,7 @@ static BOOL isNetworkPath (NSString *path)
                             finished = YES;
                     }
                 }
-                
+                                
                 if (0 == len)
                     break;
                 
@@ -1243,3 +1271,16 @@ static BOOL isNetworkPath (NSString *path)
 }
 
 @end
+
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
+static int interrupt_callback(void *ctx)
+{
+    if (!ctx)
+        return 0;
+    __unsafe_unretained KxMovieDecoder *p = (__bridge KxMovieDecoder *)ctx;
+    const BOOL r = [p interruptDecoder];
+    if (r) NSLog(@"DEBUG: INTERRUPT_CALLBACK!");
+    return r;
+}

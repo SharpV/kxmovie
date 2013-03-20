@@ -29,7 +29,10 @@
         self.tabBarItem = [[UITabBarItem alloc] initWithTabBarSystemItem:UITabBarSystemItemFeatured tag: 0];
         
         _remoteMovies = @[
+
+            @"http://liveipad.wasu.cn/cctv2_ipad/z.m3u8",                          
             @"http://www.wowza.com/_h264/BigBuckBunny_175k.mov",
+            @"http://192.168.10.1:81/p=3.ts",
             // @"http://www.wowza.com/_h264/BigBuckBunny_115k.mov",
             @"rtsp://184.72.239.149/vod/mp4:BigBuckBunny_115k.mov",
             @"http://santai.tv/vod/test/test_format_1.3gp",
@@ -212,7 +215,8 @@
         parameters[KxMovieParameterDisableDeinterlacing] = @(YES);
     
     // disable buffering
-    // parameters[KxMovieParameterMinBufferedDuration] = @(0.0f);
+    //parameters[KxMovieParameterMinBufferedDuration] = @(0.0f);
+    //parameters[KxMovieParameterMaxBufferedDuration] = @(0.0f);
     
     KxMovieViewController *vc = [KxMovieViewController movieViewControllerWithContentPath:path
     parameters:parameters];

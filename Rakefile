@@ -9,15 +9,15 @@ def system_or_exit(cmd, stdout = nil)
 end
 
 ## build ffmpeg
-IOSVERSION=6.0
+IOSVERSION=6.1
 XCODE_PATH='/Applications/Xcode.app/Contents/Developer/Platforms'
 GCC_PATH='/Developer/usr/bin/gcc'
 LIB_PATH='/usr/lib/system'
 PLATOFRM_PATH_SIM ='/iPhoneSimulator.platform'
 PLATOFRM_PATH_IOS ='/iPhoneOS.platform'
-#SDK_PATH_SIM ='/Developer/SDKs/iPhoneSimulator5.1.sdk'
-SDK_PATH_SIM ="/Developer/SDKs/iPhoneSimulator#{IOSVERSION}.sdk"
-SDK_PATH_IOS="/Developer/SDKs/iPhoneOS#{IOSVERSION}.sdk"
+
+SDK_PATH_SIM ='/Developer/SDKs/iPhoneSimulator6.1.sdk'
+SDK_PATH_IOS='/Developer/SDKs/iPhoneOS6.1.sdk'
 
 
 FFMPEG_BUILD_ARGS_SIM = [
@@ -27,6 +27,7 @@ FFMPEG_BUILD_ARGS_SIM = [
 '--cpu=i386',
 "--extra-ldflags='-arch i386'",
 "--extra-cflags='-arch i386'",
+'--disable-asm',
 ]
 
 FFMPEG_BUILD_ARGS_ARMV7 = [
@@ -37,12 +38,12 @@ FFMPEG_BUILD_ARGS_ARMV7 = [
 "--extra-ldflags='-arch armv7'",
 "--extra-cflags='-mfpu=neon -mfloat-abi=softfp -mvectorize-with-neon-quad'",
 '--enable-neon',
-'--disable-debug',
 '--enable-optimizations',
+'--disable-debug',
 '--disable-armv5te',
 '--disable-armv6',
 '--disable-armv6t2',
-'--disable-armvfp',
+'--enable-small',
 ]
 
 FFMPEG_BUILD_ARGS_ARMV7S = [
@@ -53,16 +54,15 @@ FFMPEG_BUILD_ARGS_ARMV7S = [
 "--extra-ldflags='-arch armv7s'",
 "--extra-cflags='-mfpu=neon -mfloat-abi=softfp -mvectorize-with-neon-quad'",
 '--enable-neon',
-'--disable-debug',
 '--enable-optimizations',
+'--disable-debug',
 '--disable-armv5te',
 '--disable-armv6',
 '--disable-armv6t2',
-'--disable-armvfp',
+'--enable-small',
 ]
 
 FFMPEG_BUILD_ARGS = [
-#'--disable-asm',
 '--disable-ffmpeg',
 '--disable-ffplay',
 '--disable-ffserver',
@@ -78,7 +78,6 @@ FFMPEG_BUILD_ARGS = [
 
 FFMPEG_LIBS = [
 'libavcodec',
-#'libavdevice',
 'libavformat',
 'libavutil',
 'libswscale',
